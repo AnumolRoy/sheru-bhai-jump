@@ -978,9 +978,16 @@ window.addEventListener('pointerdown', e => {
 }, { passive: false });
 
 window.addEventListener('keydown', e => {
+  // Block F12 and common DevTools / view-source shortcuts
+  const k = (e.key || '').toLowerCase();
+  if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['i', 'j', 'c'].includes(k)) || (e.ctrlKey && k === 'u')) {
+    e.preventDefault();
+    return;
+  }
   if (panelOpen) return;
   if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); tap(); }
 });
+// Block the right-click menu (Inspect) on the whole page
 window.addEventListener('contextmenu', e => e.preventDefault());
 
 // ============ Cloud sync (Firebase) ============
