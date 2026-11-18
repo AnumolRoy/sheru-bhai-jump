@@ -28,12 +28,20 @@
   .plist button.active{background:#ffe27a;}
   ol{margin:0;padding-left:24px;font-size:16px;line-height:1.8;}
   .muted{color:#777;font-size:14px;}
+  #install{position:fixed;left:0;right:0;bottom:14px;text-align:center;display:none;pointer-events:none;}
+  #install.show{display:block;}
+  #install button{pointer-events:auto;font-size:16px;padding:12px 22px;border-radius:24px;background:#f5c518;color:#222;box-shadow:0 6px 18px rgba(0,0,0,.35);}
+  #iosHint{display:none;margin:0 auto;max-width:88vw;background:rgba(0,0,0,.65);color:#fff;padding:10px 14px;border-radius:12px;font-size:14px;pointer-events:none;}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 
 <div id="ui">
+  <div id="install">
+    <button id="installBtn">📲 Install Sheru Jump</button>
+    <div id="iosHint"></div>
+  </div>
   <div id="panel">
     <div class="card">
       <h2 id="ptitle">Who's playing?</h2>
@@ -788,7 +796,7 @@ function draw(now) {
     ctx.fillStyle = 'rgba(0,0,0,.2)';
     ctx.fillRect(0, 0, W, H);
     drawText('SHERU JUMP', W / 2, 62, 44);
-    drawText('Made by · bodhinetwork.com', W / 2, 14, 10, 'rgba(255,255,255,.9)');
+    drawText('Made by Bodhi Network · bodhinetwork.com', W / 2, 14, 10, 'rgba(255,255,255,.9)');
     drawImgH(IMG_FULL, W / 2, 118, 290);
     roundBox(50, 412, 300, 86, 16, 'rgba(0,0,0,.3)');
     if (p.name) {
@@ -955,6 +963,46 @@ window.addEventListener('keydown', e => {
   if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); tap(); }
 });
 window.addEventListener('contextmenu', e => e.preventDefault());
+
+// ============ Install as an app ============
+const installBar = document.getElementById('install');
+const installBtn = document.getElementById('installBtn');
+const iosHint = document.getElementById('iosHint');
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+let deferredInstall = null;
+
+// Android / desktop Chrome: show our install button when the browser allows it
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstall = e;
+  if (!isStandalone) {
+    installBtn.style.display = 'inline-block';
+    installBar.classList.add('show');
+  }
+});
+installBtn.addEventListener('click', async () => {
+  if (!deferredInstall) return;
+  deferredInstall.prompt();
+  await deferredInstall.userChoice;
+  deferredInstall = null;
+  installBar.classList.remove('show');
+});
+window.addEventListener('appinstalled', () => installBar.classList.remove('show'));
+
+// iPhone Safari has no install button, so show a short tip instead
+if (isIOS && !isStandalone) {
+  installBtn.style.display = 'none';
+  iosHint.textContent = 'To install: tap Share, then "Add to Home Screen"';
+  iosHint.style.display = 'inline-block';
+  installBar.classList.add('show');
+  setTimeout(() => installBar.classList.remove('show'), 12000);
+}
+
+// Offline support and updates (needs https or localhost; not used when opened from a file)
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
 
 // ============ Start ============
 resize();

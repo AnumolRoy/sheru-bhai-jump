@@ -1,12 +1,15 @@
 {
   "name": "Sheru Jump",
   "short_name": "Sheru Jump",
+  "id": "./",
+  "scope": "./",
+  "description": "Sheru Jump: tap to fly Sheru Bhai through the pipes and race to 1 Trillion.",
   "start_url": "./index.html",
   "display": "fullscreen",
   "orientation": "portrait",
   "background_color": "#1b1f2a",
   "theme_color": "#4ec0ca",
   "icons": [
-    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+    { "src": "Sheru-Jump_app-icon-Adventure.png", "sizes": "any", "type": "image/png", "purpose": "any" }
   ]
 }
