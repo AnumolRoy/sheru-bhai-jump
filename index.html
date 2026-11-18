@@ -7,7 +7,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Sheru Jump">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="icon" href="Sheru-Jump_app-icon-Adventure.png" type="image/png">
+<link rel="apple-touch-icon" href="Sheru-Jump_app-icon-Adventure.png">
 <title>Sheru Jump</title>
 <style>
   *{box-sizing:border-box;}
@@ -16,17 +17,17 @@
   #ui{position:fixed;inset:0;pointer-events:none;}
   #panel{position:fixed;inset:0;background:rgba(10,14,24,.85);display:none;align-items:center;justify-content:center;pointer-events:auto;}
   #panel.show{display:flex;}
-  .card{background:#fff;color:#222;border-radius:18px;padding:18px;width:min(92vw,370px);max-height:90vh;overflow:auto;box-shadow:0 10px 40px rgba(0,0,0,.5);}
-  .card h2{margin:0 0 10px;font-size:22px;}
-  .card h3{margin:14px 0 6px;font-size:13px;color:#555;text-transform:uppercase;letter-spacing:.5px;}
-  .row{display:flex;gap:8px;}
-  input{flex:1;min-width:0;font-size:16px;padding:10px 12px;border:2px solid #ccc;border-radius:10px;}
-  button{font-size:15px;font-weight:700;padding:10px 14px;border:0;border-radius:10px;background:#f5c518;color:#222;cursor:pointer;}
-  button.ghost{background:#eee;width:100%;margin-top:12px;}
-  .plist button{display:flex;justify-content:space-between;width:100%;margin-bottom:6px;background:#f2f2f2;}
+  .card{background:#fff;color:#222;border-radius:20px;padding:24px;width:min(94vw,480px);max-height:88vh;overflow:auto;box-shadow:0 10px 40px rgba(0,0,0,.5);}
+  .card h2{margin:0 0 14px;font-size:28px;}
+  .card h3{margin:18px 0 8px;font-size:15px;color:#555;text-transform:uppercase;letter-spacing:.5px;}
+  .row{display:flex;gap:10px;}
+  input{flex:1;min-width:0;font-size:18px;padding:14px 14px;border:2px solid #ccc;border-radius:12px;}
+  button{font-size:18px;font-weight:700;padding:14px 20px;border:0;border-radius:12px;background:#f5c518;color:#222;cursor:pointer;}
+  button.ghost{background:#eee;width:100%;margin-top:14px;padding:14px;font-size:17px;}
+  .plist button{display:flex;justify-content:space-between;width:100%;margin-bottom:8px;padding:14px 16px;font-size:17px;background:#f2f2f2;}
   .plist button.active{background:#ffe27a;}
-  ol{margin:0;padding-left:22px;font-size:14px;line-height:1.8;}
-  .muted{color:#777;font-size:12px;}
+  ol{margin:0;padding-left:24px;font-size:16px;line-height:1.8;}
+  .muted{color:#777;font-size:14px;}
 </style>
 </head>
 <body>
@@ -592,24 +593,9 @@ function drawSheru(x, y, vy, rot) {
 }
 
 function drawPlayHUD(p) {
-  // Top-left: gold and player name
-  drawCoin(28, 34, 11 + 3 * coinPop);
-  drawText(p.gold.toLocaleString('en-IN'), 48, 34, 18, '#ffd84a', 'left');
-  drawText(p.name, 28, 58, 12, '#fff', 'left');
-  // Top-right: obstacles and sound toggle
-  drawText('Obstacles ' + obstacles, W - 64, 34, 13, '#fff', 'right');
-  roundBox(SOUND_BTN.x, SOUND_BTN.y, SOUND_BTN.w, SOUND_BTN.h, 10, 'rgba(0,0,0,.25)');
-  drawText(soundOn ? '🔊' : '🔇', SOUND_BTN.x + SOUND_BTN.w / 2, SOUND_BTN.y + SOUND_BTN.h / 2 + 1, 16, '#fff', 'center', false);
+  drawTopBar(p);
 
-  // Score, road to trillion, streak
-  ctx.save();
-  ctx.translate(W / 2, 30);
-  const sc = 1 + 0.25 * popT;
-  ctx.scale(sc, sc);
-  drawText(fmtIN(dispScore), 0, 0, 26, '#fff');
-  ctx.restore();
-  drawRoad(performance.now());
-  if (streak >= 2) drawText('🔥 Streak ' + streak, W / 2, 116, 13, '#ffd84a');
+  drawScoreBlock(performance.now());
 
   if (celebrate && performance.now() < celebrate.until) {
     roundBox(20, 186, 360, 270, 20, 'rgba(10,14,24,.6)');
@@ -620,39 +606,94 @@ function drawPlayHUD(p) {
 
 function stageTitle() { return stageNameOf(stageCleared); }
 
-// Road from the start to 1 Trillion: nodes for each stage, a gold trail, and your position
-function drawRoad(now) {
-  const step = 340 / 6;
-  const xs = i => 30 + i * step;
+// Game HUD: rounded pills with a gold accent, so it reads as part of the game
+function hudPill(x, y, w, h, fill) { roundBox(x, y, w, h, h / 2, fill); }
+
+// Top-left: coins and player. Top-right: obstacles and sound.
+function drawTopBar(p) {
+  hudPill(10, 10, 150, 46, 'rgba(10,14,24,.45)');
+  drawCoin(34, 33, 12 + 3 * coinPop);
+  drawText(p.gold.toLocaleString('en-IN'), 54, 30, 19, '#ffd84a', 'left');
+  drawText(p.name, 54, 46, 11, '#fff', 'left', false);
+
+  hudPill(W - 146, 10, 84, 46, 'rgba(10,14,24,.45)');
+  drawText('BEST', W - 104, 24, 8, '#ffd84a', 'center', false);
+  drawText(fmtIN(Math.max(p.best, score)), W - 104, 42, 13, '#fff', 'center', false);
+
+  hudPill(SOUND_BTN.x - 6, 10, SOUND_BTN.w + 12, 46, 'rgba(10,14,24,.45)');
+  drawText(soundOn ? '🔊' : '🔇', SOUND_BTN.x + SOUND_BTN.w / 2, 34, 18, '#fff', 'center', false);
+}
+
+// Big score with a label, the stage pill, and the streak badge
+function drawScoreBlock(now) {
+  drawText('SCORE', W / 2, 24, 10, '#ffd84a', 'center', false);
+  ctx.save();
+  ctx.translate(W / 2, 50);
+  const sc = 1 + 0.25 * popT;
+  ctx.scale(sc, sc);
+  drawText(fmtIN(dispScore), 0, 0, dispScore >= 1e7 ? 22 : 34, '#fff');
+  ctx.restore();
+  drawProgress(now);
+  if (streak >= 2) {
+    const b = 1 + 0.05 * Math.sin(now / 120);
+    const toBonus = 5 - (streak % 5);
+    ctx.save();
+    ctx.translate(W / 2, 150);
+    ctx.scale(b, b);
+    hudPill(-120, -14, 240, 28, '#ffd84a');
+    drawText('🔥 STREAK ' + streak + '  ·  ' + toBonus + ' MORE = +10 GOLD', 0, 0, 12, '#222', 'center', false);
+    ctx.restore();
+  }
+}
+
+// Level bar: gold track with moving shine, a glowing knob at your position, and clear labels
+function drawProgress(now) {
+  const next = STAGES[stageCleared];
   const frac = progressToNext();
-  const px = xs(stageCleared) + frac * step;
-  const labels = ['', '100', '1K', '1L', '10L', '1B', '1T'];
+  const x = W / 2 - 115, w = 230, barY = 92, barH = 16;
+  const fillW = w * frac;
 
-  roundBox(30, 56, 340, 4, 2, 'rgba(255,255,255,.35)');
-  roundBox(30, 56, Math.max(0, px - 30), 4, 2, '#ffd84a');
+  drawText(stageTitle().toUpperCase(), x, 80, 11, '#ffd84a', 'left', false);
+  drawText(next ? 'NEXT ' + next.label : 'MAX STAGE', x + w, 80, 11, '#ffffff', 'right', false);
 
-  for (let i = 0; i <= 6; i++) {
-    const x = xs(i);
-    const isNext = i === stageCleared + 1;
-    if (isNext && frac > 0.8) {
-      ctx.globalAlpha = 0.5 + 0.5 * Math.sin(now / 150);
-      ctx.fillStyle = '#ffd84a';
-      ctx.beginPath(); ctx.arc(x, 58, 11, 0, Math.PI * 2); ctx.fill();
-      ctx.globalAlpha = 1;
+  // Track
+  roundBox(x - 2, barY - 2, w + 4, barH + 4, (barH + 4) / 2, 'rgba(0,0,0,.45)');
+
+  // Gold fill with moving shine stripes
+  if (fillW > 0) {
+    ctx.save();
+    ctx.beginPath(); ctx.roundRect(x, barY, fillW, barH, barH / 2); ctx.clip();
+    const grad = ctx.createLinearGradient(x, 0, x + fillW, 0);
+    grad.addColorStop(0, '#ff9f1a');
+    grad.addColorStop(1, '#ffe66d');
+    ctx.fillStyle = grad;
+    ctx.fillRect(x, barY, fillW, barH);
+    ctx.fillStyle = 'rgba(255,255,255,.35)';
+    const off = (now / 25) % 16;
+    for (let sx = x - 16 + off; sx < x + fillW; sx += 16) {
+      ctx.beginPath();
+      ctx.moveTo(sx, barY + barH); ctx.lineTo(sx + 8, barY);
+      ctx.lineTo(sx + 12, barY); ctx.lineTo(sx + 4, barY + barH);
+      ctx.closePath(); ctx.fill();
     }
-    ctx.beginPath(); ctx.arc(x, 58, isNext ? 6 : 4.5, 0, Math.PI * 2);
-    ctx.fillStyle = i <= stageCleared ? '#ffd84a' : 'rgba(255,255,255,.55)';
-    ctx.fill(); ctx.strokeStyle = '#222'; ctx.lineWidth = 1.5; ctx.stroke();
-    if (i > 0) drawText(labels[i], x, 76, 9, '#fff');
+    ctx.restore();
   }
 
-  // Your position on the road
-  ctx.beginPath(); ctx.arc(px, 58, 4, 0, Math.PI * 2);
-  ctx.fillStyle = '#fff'; ctx.fill(); ctx.strokeStyle = '#222'; ctx.lineWidth = 1.5; ctx.stroke();
+  // Knob at your position
+  const kx = x + fillW;
+  const kp = 1 + 0.12 * Math.sin(now / 130);
+  ctx.beginPath(); ctx.arc(kx, barY + barH / 2, 11 * kp, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255,230,109,.35)'; ctx.fill();
+  ctx.beginPath(); ctx.arc(kx, barY + barH / 2, 6, 0, Math.PI * 2);
+  ctx.fillStyle = '#fff'; ctx.strokeStyle = '#b8860b'; ctx.lineWidth = 2; ctx.fill(); ctx.stroke();
 
-  const next = STAGES[stageCleared];
-  if (next) drawText('Next ' + next.label + ' · ~' + obstaclesToNext() + ' obstacles to go', W / 2, 94, 11, '#fff');
-  else drawText('TRILLION! You are a legend', W / 2, 94, 12, '#ffd84a');
+  // Obstacles left to the next stage
+  if (next) {
+    const pulse = frac > 0.8 ? 0.6 + 0.4 * Math.sin(now / 150) : 1;
+    drawText('~' + obstaclesToNext() + ' obstacles to go', W / 2, barY + barH + 14, 11, 'rgba(255,255,255,' + pulse + ')', 'center', true);
+  } else {
+    drawText('TRILLION! YOU ARE A LEGEND', W / 2, barY + barH + 14, 11, '#ffd84a', 'center', true);
+  }
 }
 
 // Rough count of obstacles left, based on the +25% growth per obstacle
@@ -662,13 +703,33 @@ function obstaclesToNext() {
   return Math.max(1, Math.ceil(Math.log(next.t / Math.max(score, 1)) / Math.log(1.25)));
 }
 
+function playButtonRect() { return { x: W / 2 - 100, y: 510, w: 200, h: 58 }; }
 function playerButtonRect() {
-  return state === 'ready' ? { x: W / 2 - 90, y: 520, w: 180, h: 38 } : { x: W / 2 - 90, y: 440, w: 180, h: 38 };
+  return state === 'ready' ? { x: W / 2 - 80, y: 580, w: 160, h: 30 } : { x: W / 2 - 90, y: 440, w: 180, h: 38 };
 }
+// Main START button on the start screen (pulses gently)
+function drawPlayButton(now) {
+  const b = playButtonRect();
+  const s = 1 + 0.03 * Math.sin(now / 200);
+  ctx.save();
+  ctx.translate(b.x + b.w / 2, b.y + b.h / 2);
+  ctx.scale(s, s);
+  roundBox(-b.w / 2, -b.h / 2, b.w, b.h, b.h / 2, '#f5c518');
+  ctx.strokeStyle = '#b8860b'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.roundRect(-b.w / 2, -b.h / 2, b.w, b.h, b.h / 2); ctx.stroke();
+  drawText('PLAY', 0, 1, 26, '#222', 'center', false);
+  ctx.restore();
+}
+// Secondary "Switch player" option (quiet on the start screen, bold on game over)
 function drawPlayerButton() {
   const b = playerButtonRect();
-  roundBox(b.x, b.y, b.w, b.h, 19, '#f5c518');
-  drawText('Switch player', b.x + b.w / 2, b.y + b.h / 2 + 1, 16, '#222', 'center', false);
+  if (state === 'ready') {
+    roundBox(b.x, b.y, b.w, b.h, b.h / 2, 'rgba(255,255,255,.22)');
+    drawText('Switch player', b.x + b.w / 2, b.y + b.h / 2 + 1, 14, '#fff', 'center', false);
+  } else {
+    roundBox(b.x, b.y, b.w, b.h, b.h / 2, '#f5c518');
+    drawText('Switch player', b.x + b.w / 2, b.y + b.h / 2 + 1, 16, '#222', 'center', false);
+  }
 }
 
 function draw(now) {
@@ -727,16 +788,17 @@ function draw(now) {
     ctx.fillStyle = 'rgba(0,0,0,.2)';
     ctx.fillRect(0, 0, W, H);
     drawText('SHERU JUMP', W / 2, 62, 44);
-    drawText('Tap to start', W / 2, 100, 18);
+    drawText('Made by · bodhinetwork.com', W / 2, 14, 10, 'rgba(255,255,255,.9)');
     drawImgH(IMG_FULL, W / 2, 118, 290);
-    roundBox(50, 414, 300, 96, 16, 'rgba(0,0,0,.3)');
+    roundBox(50, 412, 300, 86, 16, 'rgba(0,0,0,.3)');
     if (p.name) {
-      drawText('Player: ' + p.name, W / 2, 436, 17);
-      drawText('Best ' + p.best.toLocaleString('en-IN') + '   ·   Gold ' + p.gold.toLocaleString('en-IN'), W / 2, 462, 15, '#ffd84a');
-      if (p.history.length) drawText('Recent: ' + p.history.slice(0, 3).join(', '), W / 2, 488, 12);
+      drawText('Player: ' + p.name, W / 2, 432, 17);
+      drawText('Best ' + p.best.toLocaleString('en-IN') + '   ·   Gold ' + p.gold.toLocaleString('en-IN'), W / 2, 456, 15, '#ffd84a');
+      if (p.history.length) drawText('Recent: ' + p.history.slice(0, 3).join(', '), W / 2, 478, 12);
     }
+    drawPlayButton(performance.now());
     drawPlayerButton();
-    drawText('Pass stages to earn gold. Goal: 1 Trillion!', W / 2, 600, 13);
+    drawText('Pass stages to earn gold. Goal: 1 Trillion!', W / 2, 622, 12);
   } else if (state === 'over') {
     ctx.fillStyle = 'rgba(0,0,0,.4)';
     ctx.fillRect(0, 0, W, H);
@@ -879,7 +941,12 @@ window.addEventListener('pointerdown', e => {
   ensureAudio();
   const p = toLogical(e);
   if (inRect(p, SOUND_BTN)) { toggleSound(); return; }
-  if ((state === 'ready' || state === 'over') && inRect(p, playerButtonRect())) { openPanel(); return; }
+  if (state === 'ready') {
+    if (inRect(p, playButtonRect())) tap();
+    else if (inRect(p, playerButtonRect())) openPanel();
+    return;
+  }
+  if (state === 'over' && inRect(p, playerButtonRect())) { openPanel(); return; }
   tap();
 }, { passive: false });
 
