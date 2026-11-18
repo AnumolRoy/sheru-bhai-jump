@@ -1,0 +1,12 @@
+{
+  "name": "Sheru Jump",
+  "short_name": "Sheru Jump",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#1b1f2a",
+  "theme_color": "#4ec0ca",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
