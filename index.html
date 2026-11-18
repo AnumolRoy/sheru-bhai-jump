@@ -17,7 +17,18 @@
   #ui{position:fixed;inset:0;pointer-events:none;}
   #panel{position:fixed;inset:0;background:rgba(10,14,24,.85);display:none;align-items:center;justify-content:center;pointer-events:auto;}
   #panel.show{display:flex;}
-  .card{background:#fff;color:#222;border-radius:20px;padding:24px;width:min(94vw,480px);max-height:88vh;overflow:auto;box-shadow:0 10px 40px rgba(0,0,0,.5);}
+  .card{background:#fff;color:#222;border-radius:20px;padding:24px;width:min(96vw,520px);max-height:92vh;overflow:auto;box-shadow:0 10px 40px rgba(0,0,0,.5);}
+  @media (max-width:600px){
+    .card{padding:20px 18px;}
+    .card h2{font-size:32px;}
+    .card h3{font-size:16px;}
+    input{font-size:20px;padding:16px;}
+    button{font-size:20px;padding:16px 22px;}
+    .plist button{font-size:18px;}
+    ol{font-size:17px;}
+  }
+  .lb{max-height:min(30vh,220px);overflow-y:auto;-webkit-overflow-scrolling:touch;background:#fafafa;border:1px solid #eee;border-radius:12px;padding:8px 12px 8px 4px;}
+  .lb ol{padding-left:26px;}
   .card h2{margin:0 0 14px;font-size:28px;}
   .card h3{margin:18px 0 8px;font-size:15px;color:#555;text-transform:uppercase;letter-spacing:.5px;}
   .row{display:flex;gap:10px;}
@@ -55,7 +66,7 @@
       <h3>Players on this device</h3>
       <div id="plist" class="plist"></div>
       <h3>Global leaderboard (top 10)</h3>
-      <ol id="gboard"></ol>
+      <div class="lb"><ol id="gboard"></ol></div>
       <h3>This device</h3>
       <ol id="pboard"></ol>
       <button id="pclose" class="ghost">Back to game</button>
