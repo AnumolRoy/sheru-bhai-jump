@@ -36,6 +36,9 @@
 </head>
 <body>
 <canvas id="c"></canvas>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
 <div id="ui">
   <div id="install">
@@ -51,7 +54,9 @@
       </div>
       <h3>Players on this device</h3>
       <div id="plist" class="plist"></div>
-      <h3>Leaderboard (best score)</h3>
+      <h3>Global leaderboard (top 10)</h3>
+      <ol id="gboard"></ol>
+      <h3>This device</h3>
       <ol id="pboard"></ol>
       <button id="pclose" class="ghost">Back to game</button>
       <p class="muted">Each player name keeps its own best score, gold and recent runs on this device.</p>
@@ -330,6 +335,7 @@ function die() {
   p.bestStage = Math.max(p.bestStage, stageCleared);
   lastRun = { prevBest, newBest, score };
   if (newBest && score > 0) setTimeout(() => play('best'), 300);
+  syncPlayer(p);
   persist();
 }
 
@@ -342,6 +348,7 @@ function checkStages() {
     p.gold += bonus;
     p.bestStage = Math.max(p.bestStage, stageCleared);
     persist();
+    syncPlayer(p);
     play('stage');
     burst(W / 2, 200, 60, ['#ffd84a', '#ff4fd8', '#4fc3f7', '#7CFC00', '#ffffff'], 7, 80, 4, 0.2, 4);
     celebrate = { until: performance.now() + 2200 };
@@ -837,6 +844,7 @@ function openPanel() {
   pclose.style.display = player() ? 'block' : 'none';
   pname.value = '';
   renderPanel();
+  renderCloudBoard();
 }
 function closePanel() {
   panelOpen = false;
@@ -963,6 +971,66 @@ window.addEventListener('keydown', e => {
   if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); tap(); }
 });
 window.addEventListener('contextmenu', e => e.preventDefault());
+
+// ============ Cloud sync (Firebase) ============
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBs2NjC6W7hEPKMFxf0FXZn1Gg3dZeR08M",
+  authDomain: "sheru-jump-e4f5a.firebaseapp.com",
+  projectId: "sheru-jump-e4f5a",
+  storageBucket: "sheru-jump-e4f5a.firebasestorage.app",
+  messagingSenderId: "498385737703",
+  appId: "1:498385737703:web:a439563d776fab1253cf42",
+  measurementId: "G-5Q26WDN4P2"
+};
+let cloudUid = null, cloudDb = null;
+try {
+  firebase.initializeApp(FIREBASE_CONFIG);
+  cloudDb = firebase.firestore();
+  firebase.auth().signInAnonymously()
+    .then(cred => { cloudUid = cred.user.uid; if (player()) syncPlayer(player()); })
+    .catch(() => {});
+} catch (e) { cloudDb = null; }
+
+// One cloud record per player name on each phone: "<anonymousId>_<name>"
+function cloudDocId(name) { return cloudUid + '_' + name.replace(/[^a-zA-Z0-9]/g, '_'); }
+
+function syncPlayer(p) {
+  if (!cloudDb || !cloudUid || !p) return;
+  cloudDb.collection('players').doc(cloudDocId(p.name)).set({
+    name: p.name,
+    best: p.best,
+    bestStage: p.bestStage,
+    gold: p.gold,
+    plays: p.plays,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  }, { merge: true }).catch(() => {});
+}
+
+function renderCloudBoard() {
+  const box = document.getElementById('gboard');
+  box.innerHTML = '';
+  if (!cloudDb) {
+    const li = document.createElement('li'); li.className = 'muted'; li.textContent = 'Online scores unavailable';
+    box.appendChild(li); return;
+  }
+  cloudDb.collection('players').orderBy('best', 'desc').limit(10).get()
+    .then(snap => {
+      if (snap.empty) {
+        const li = document.createElement('li'); li.className = 'muted'; li.textContent = 'No online scores yet';
+        box.appendChild(li); return;
+      }
+      snap.forEach(doc => {
+        const d = doc.data();
+        const li = document.createElement('li');
+        li.textContent = `${d.name} — ${Number(d.best).toLocaleString('en-IN')} (${stageNameOf(d.bestStage || 0)})`;
+        box.appendChild(li);
+      });
+    })
+    .catch(() => {
+      const li = document.createElement('li'); li.className = 'muted'; li.textContent = 'Could not load online scores';
+      box.appendChild(li);
+    });
+}
 
 // ============ Install as an app ============
 const installBar = document.getElementById('install');
