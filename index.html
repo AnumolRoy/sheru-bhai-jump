@@ -57,6 +57,15 @@ const R = 18, BIRD_X = 120, PIPE_W = 66, SPACING = 230;
 const GRAV = 0.45, FLAP = -8.4, COIN_VALUE = 5;
 const SOUND_BTN = { x: W - 52, y: 14, w: 40, h: 36 };
 
+// Real Sheru Bhai artwork (stored in the same folder as index.html)
+const IMG_FULL = new Image(); IMG_FULL.src = 'sherubhai.png';
+const IMG_CLOSE = new Image(); IMG_CLOSE.src = 'sherubhaicloseup.png';
+function drawImgH(img, cx, top, h) {
+  if (!img.complete || !img.naturalWidth) return;
+  const w = img.naturalWidth * h / img.naturalHeight;
+  ctx.drawImage(img, cx - w / 2, top, w, h);
+}
+
 const STAGES = [
   { t: 100,  name: 'Baby Sheru',     label: '100' },
   { t: 1000, name: 'Sheru Bhai',     label: '1,000' },
@@ -212,7 +221,7 @@ function toggleSound() {
 // ============ Game state ============
 let state = 'ready';
 let bird, pipes, score, obstacles, spawned, stageCleared, runGold, lastCenter;
-let scroll = 0, banner = null, overAt = 0, lastRun = null;
+let scroll = 0, banner = null, overAt = 0, lastRun = null, celebrate = null;
 let trail = [], parts = [], floats = [];
 let popT = 0, shakeT = 0;
 let lastT = performance.now();
@@ -223,7 +232,7 @@ function reset() {
   pipes = [];
   score = 0; obstacles = 0; spawned = 0; stageCleared = 0; runGold = 0;
   lastCenter = H * 0.45;
-  banner = null; lastRun = null;
+  banner = null; lastRun = null; celebrate = null;
   trail = []; parts = []; floats = [];
   popT = 0; shakeT = 0;
 }
@@ -273,6 +282,7 @@ function floatText(s, x, y, c) { floats.push({ s, x, y, life: 45, max: 45, c });
 function tap() {
   if (panelOpen) return;
   if (!player()) { openPanel(); return; }
+  if (celebrate && performance.now() < celebrate.until) return;
   ensureAudio();
   if (state === 'ready') {
     state = 'play';
@@ -324,11 +334,12 @@ function checkStages() {
     persist();
     play('stage');
     burst(W / 2, 200, 60, ['#ffd84a', '#ff4fd8', '#4fc3f7', '#7CFC00', '#ffffff'], 7, 80, 4, 0.2, 4);
+    celebrate = { until: performance.now() + 2200 };
     banner = {
       text: stageCleared === STAGES.length
         ? 'TRILLION REACHED! +' + bonus + ' Gold'
         : 'STAGE ' + stageCleared + ' CLEARED  +' + bonus + ' Gold',
-      until: performance.now() + 2500
+      until: performance.now() + 2200
     };
   }
 }
@@ -580,28 +591,29 @@ function drawPlayHUD(p) {
   roundBox(SOUND_BTN.x, SOUND_BTN.y, SOUND_BTN.w, SOUND_BTN.h, 10, 'rgba(0,0,0,.25)');
   drawText(soundOn ? '🔊' : '🔇', SOUND_BTN.x + SOUND_BTN.w / 2, SOUND_BTN.y + SOUND_BTN.h / 2 + 1, 16, '#fff', 'center', false);
 
-  // Score block
-  roundBox(70, 70, 260, 112, 18, 'rgba(0,0,0,.18)');
+  // Compact score at the top; no large box, so the view stays clear
   ctx.save();
-  ctx.translate(W / 2, 96);
+  ctx.translate(W / 2, 34);
   const sc = 1 + 0.25 * popT;
   ctx.scale(sc, sc);
-  drawText(fmtIN(score), 0, 0, 44);
+  drawText(fmtIN(score), 0, 0, 24);
   ctx.restore();
-  if (score >= 1e5) drawText(score.toLocaleString('en-IN'), W / 2, 122, 12);
-  drawText(stageTitle(), W / 2, 141, 14);
-  roundBox(90, 150, 220, 8, 4, 'rgba(0,0,0,.3)');
-  roundBox(90, 150, 220 * progressToNext(), 8, 4, '#ffd84a');
   const next = STAGES[stageCleared];
-  if (next) drawText('Next: ' + next.label, W / 2, 172, 12);
+  drawText(stageTitle() + (next ? '  ·  Next ' + next.label : ''), W / 2, 58, 11);
+  roundBox(W / 2 - 50, 66, 100, 4, 2, 'rgba(0,0,0,.3)');
+  roundBox(W / 2 - 50, 66, 100 * progressToNext(), 4, 2, '#ffd84a');
 
-  if (banner && performance.now() < banner.until) drawText(banner.text, W / 2, 230, 20, '#ffd84a');
+  if (celebrate && performance.now() < celebrate.until) {
+    roundBox(20, 186, 360, 270, 20, 'rgba(10,14,24,.6)');
+    drawImgH(IMG_CLOSE, W / 2, 196, 210);
+    if (banner) drawText(banner.text, W / 2, 436, 22, '#ffd84a');
+  }
 }
 
 function stageTitle() { return stageNameOf(stageCleared); }
 
 function playerButtonRect() {
-  return state === 'ready' ? { x: W / 2 - 90, y: 392, w: 180, h: 38 } : { x: W / 2 - 90, y: 440, w: 180, h: 38 };
+  return state === 'ready' ? { x: W / 2 - 90, y: 520, w: 180, h: 38 } : { x: W / 2 - 90, y: 440, w: 180, h: 38 };
 }
 function drawPlayerButton() {
   const b = playerButtonRect();
@@ -642,7 +654,7 @@ function draw(now) {
   ctx.fillStyle = 'rgba(0,0,0,.08)';
   for (let x = -(scroll % 30); x < W; x += 30) ctx.fillRect(x, GROUND + 22, 14, 4);
 
-  drawSheru(bird.x, bird.y, bird.vy, bird.rot);
+  if (state !== 'ready') drawSheru(bird.x, bird.y, bird.vy, bird.rot);
 
   // Particles and floating text
   for (const q of parts) {
@@ -662,18 +674,19 @@ function draw(now) {
   if (state === 'play') {
     drawPlayHUD(p);
   } else if (state === 'ready') {
-    ctx.fillStyle = 'rgba(0,0,0,.25)';
+    ctx.fillStyle = 'rgba(0,0,0,.2)';
     ctx.fillRect(0, 0, W, H);
-    drawText('SHERU JUMP', W / 2, 190, 44);
-    drawText('Tap to start', W / 2, 240, 18);
+    drawText('SHERU JUMP', W / 2, 62, 44);
+    drawText('Tap to start', W / 2, 100, 18);
+    drawImgH(IMG_FULL, W / 2, 118, 290);
+    roundBox(50, 414, 300, 96, 16, 'rgba(0,0,0,.3)');
     if (p.name) {
-      drawText('Player: ' + p.name, W / 2, 284, 17);
-      drawText('Best: ' + p.best.toLocaleString('en-IN'), W / 2, 310, 16);
-      drawText('Gold coins: ' + p.gold.toLocaleString('en-IN'), W / 2, 334, 16, '#ffd84a');
-      if (p.history.length) drawText('Recent runs: ' + p.history.slice(0, 3).join(', '), W / 2, 358, 13);
+      drawText('Player: ' + p.name, W / 2, 436, 17);
+      drawText('Best ' + p.best.toLocaleString('en-IN') + '   ·   Gold ' + p.gold.toLocaleString('en-IN'), W / 2, 462, 15, '#ffd84a');
+      if (p.history.length) drawText('Recent: ' + p.history.slice(0, 3).join(', '), W / 2, 488, 12);
     }
     drawPlayerButton();
-    drawText('Pass stages to earn gold. Goal: 1 Trillion!', W / 2, 470, 13);
+    drawText('Pass stages to earn gold. Goal: 1 Trillion!', W / 2, 600, 13);
   } else if (state === 'over') {
     ctx.fillStyle = 'rgba(0,0,0,.4)';
     ctx.fillRect(0, 0, W, H);
@@ -765,8 +778,9 @@ function loop(now) {
   const dt = Math.min(2.5, (now - lastT) / 16.667); // keeps speed the same on 60Hz and 120Hz phones
   lastT = now;
   stepPalette();
+  const celebrating = celebrate && performance.now() < celebrate.until;
   if (state === 'play') {
-    update(dt);
+    if (!celebrating) update(dt);
   } else if (state === 'ready') {
     bird.y = H * 0.45 + Math.sin(now / 250) * 10;
     bird.vy = 0; bird.rot = 0;
