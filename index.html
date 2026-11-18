@@ -730,6 +730,8 @@ function obstaclesToNext() {
 }
 
 function playButtonRect() { return { x: W / 2 - 100, y: 510, w: 200, h: 58 }; }
+// Tappable "Made by Bodhi Network" credit at the top of the start screen
+const CREDIT_RECT = { x: W / 2 - 140, y: 2, w: 280, h: 24 };
 function playerButtonRect() {
   return state === 'ready' ? { x: W / 2 - 80, y: 580, w: 160, h: 30 } : { x: W / 2 - 90, y: 440, w: 180, h: 38 };
 }
@@ -814,7 +816,12 @@ function draw(now) {
     ctx.fillStyle = 'rgba(0,0,0,.2)';
     ctx.fillRect(0, 0, W, H);
     drawText('SHERU JUMP', W / 2, 62, 44);
-    drawText('Made by Bodhi Network · bodhinetwork.com', W / 2, 14, 10, 'rgba(255,255,255,.9)');
+    drawText('Developed by · bodhinetwork.com', W / 2, 14, 10, 'rgba(255,255,255,.9)');
+    // Underline to show the credit is a link
+    ctx.font = 'bold 10px system-ui, sans-serif';
+    const creditW = ctx.measureText('Developed by · bodhinetwork.com').width;
+    ctx.fillStyle = 'rgba(255,255,255,.9)';
+    ctx.fillRect(W / 2 - creditW / 2, 21, creditW, 1);
     drawImgH(IMG_FULL, W / 2, 118, 290);
     roundBox(50, 412, 300, 86, 16, 'rgba(0,0,0,.3)');
     if (p.name) {
@@ -969,6 +976,7 @@ window.addEventListener('pointerdown', e => {
   const p = toLogical(e);
   if (inRect(p, SOUND_BTN)) { toggleSound(); return; }
   if (state === 'ready') {
+    if (inRect(p, CREDIT_RECT)) { window.open('https://bodhinetwork.com/', '_blank', 'noopener'); return; }
     if (inRect(p, playButtonRect())) tap();
     else if (inRect(p, playerButtonRect())) openPanel();
     return;
